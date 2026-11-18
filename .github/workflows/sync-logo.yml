@@ -1,0 +1,45 @@
+name: sync-logo
+
+# Copies the ASCII logo from pixelspringer/brands into the profile README,
+# between the <!-- logo:start --> and <!-- logo:end --> markers.
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/sync-logo.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-logo
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Fetch logo
+        run: curl --fail --silent --show-error --location --output "$RUNNER_TEMP/logo.txt" https://raw.githubusercontent.com/pixelspringer/brands/main/ascii/logo.txt
+      - name: Replace logo in profile/README.md
+        run: |
+          grep -q '<!-- logo:start' profile/README.md
+          grep -q '<!-- logo:end -->' profile/README.md
+          awk -v logo="$RUNNER_TEMP/logo.txt" '
+            /<!-- logo:start/ { print; print "```text"; while ((getline line < logo) > 0) print line; print "```"; skip = 1; next }
+            /<!-- logo:end -->/ { skip = 0 }
+            !skip { print }
+          ' profile/README.md > "$RUNNER_TEMP/README.md"
+          mv "$RUNNER_TEMP/README.md" profile/README.md
+      - name: Commit if changed
+        run: |
+          if git diff --quiet; then
+            echo "Logo is up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git commit --all --message "chore: sync logo from pixelspringer/brands"
+          git push
