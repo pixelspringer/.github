@@ -1,10 +1,9 @@
 name: sync-logo
 
 # Copies the ASCII logo from pixelspringer/brands into the profile README,
-# between the <!-- logo:start --> and <!-- logo:end --> markers.
+# between the <!-- logo:start --> and <!-- logo:end --> markers. Started by
+# pixelspringer/brands (.github/workflows/notify.yml) when the logo changes.
 on:
-  schedule:
-    - cron: "17 5 * * 1"
   workflow_dispatch:
   push:
     branches: [main]
